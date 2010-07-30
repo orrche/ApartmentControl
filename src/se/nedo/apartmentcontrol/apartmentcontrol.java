@@ -64,16 +64,11 @@ public class apartmentcontrol extends AppWidgetProvider {
 				String whatever = intent.getStringExtra("msg");
 				if ( whatever == null ) whatever = "null";
 				
-				Toast.makeText(context, whatever + appWidgetId + " " + counter, Toast.LENGTH_SHORT).show();
+				Toast.makeText(context, whatever + appWidgetId, Toast.LENGTH_SHORT).show();
 				
 				RemoteViews updateViews = new RemoteViews(context.getPackageName(), R.layout.main);
 				
-				if ( counter % 2 == 0 ) {
-					updateViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
-				}
-				else {
-					updateViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
-				}
+				updateViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
 					
 				// Push update for this widget to the home screen
 				ComponentName thisWidget = new ComponentName(context, apartmentcontrol.class);
