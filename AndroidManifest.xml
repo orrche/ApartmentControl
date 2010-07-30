@@ -8,19 +8,22 @@
 		<receiver android:name=".apartmentcontrol" android:label="@string/app_name">
 			<intent-filter>
 				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-				<action android:name="se.nedo.apartmentcontrol.android.widget.buttons.ButtonWidget.ACTION_WIDGET_RECEIVER"/>
 			</intent-filter>
 			<meta-data android:name="android.appwidget.provider"
 				android:resource="@xml/apartmentcontrol_provider" />
 		</receiver>
 
-		<activity android:name=".ClickOneActivity">
-			<intent-filter>
-				<action android:name="se.nedo.apartmentcontrol.buttons.ButtonWidget.ACTION_WIDGET_CONFIGURE"/>
-			</intent-filter>
-		</activity>
 
+		<receiver android:name=".ApartmentBroadcastReceiver">
+                <intent-filter>
+                        <action android:name="ActionReceiverWidget" />
+                </intent-filter>
+        </receiver>
+        <!-- Service to perform web API queries -->
+        <service android:name=".apartmentcontrol$UpdateService" />
     </application>
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4" />
 
 </manifest> 

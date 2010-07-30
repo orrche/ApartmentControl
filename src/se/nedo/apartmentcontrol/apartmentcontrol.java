@@ -5,7 +5,9 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.MediaStore.Images;
 import android.util.Log;
 import android.widget.ImageButton;
@@ -26,69 +28,88 @@ public class apartmentcontrol extends AppWidgetProvider {
 
 	}
 
-
 	@Override
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-		Toast.makeText(context, "Resetted" + appWidgetIds[0], Toast.LENGTH_LONG).show();
-		RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.main);
-		Intent configIntent = new Intent(context, ClickOneActivity.class);
-		configIntent.setAction(ACTION_WIDGET_CONFIGURE);
-		Intent active = new Intent(context, apartmentcontrol.class);
-		active.setAction(ACTION_WIDGET_RECEIVER);
-		active.putExtra("msg", "Btn:");
-		active.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID , appWidgetIds[0]);
-		
-		PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, 0);
-		remoteViews.setOnClickPendingIntent(R.id.ImageView01, actionPendingIntent);
-		//remoteViews.setOnClickPendingIntent(R.id.button_two, configPendingIntent);
-		appWidgetManager.updateAppWidget(appWidgetIds, remoteViews);
+		Log.i("Apartmentcontrol Service", "Start start start...");
+    	
+		context.startService(new Intent(context, UpdateService.class));
 	}
 	
-	
 	@Override
-	public void onReceive(Context context, Intent intent) {
-		try
-		{
-			final String action = intent.getAction();
-
-			if (AppWidgetManager.ACTION_APPWIDGET_DELETED.equals(action)) {
-				final int appWidgetId = intent.getExtras().getInt( AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
-				
-				Toast.makeText(context, "ouch gets deleted this way " + appWidgetId, Toast.LENGTH_SHORT).show();
-				if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-					this.onDeleted(context, new int[] { appWidgetId });
-				}
-			}
-			if (intent.getAction().equals(ACTION_WIDGET_RECEIVER)) {
-				final int appWidgetId = intent.getIntExtra( AppWidgetManager.EXTRA_APPWIDGET_ID, -1);
-				String whatever = intent.getStringExtra("msg");
-				if ( whatever == null ) whatever = "null";
-				
-				Toast.makeText(context, whatever + appWidgetId, Toast.LENGTH_SHORT).show();
-				
-				RemoteViews updateViews = new RemoteViews(context.getPackageName(), R.layout.main);
-				
-				updateViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
-					
-				// Push update for this widget to the home screen
-				ComponentName thisWidget = new ComponentName(context, apartmentcontrol.class);
-				AppWidgetManager manager = AppWidgetManager.getInstance(context);
-				manager.updateAppWidget(thisWidget, updateViews);
-				
-//				Intent widgetUpdate = new Intent();
-//				widgetUpdate.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-//				widgetUpdate.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS,  new int[] { appWidgetId });
-//				
-//				PendingIntent newPending = PendingIntent.getBroadcast(context, 0, widgetUpdate, PendingIntent.FLAG_UPDATE_CURRENT);
-//				newPending.send();
-			}
-		}
-		catch (Exception e)
-		{
-			Toast.makeText(context, "God damit", Toast.LENGTH_SHORT).show();
+    public void onReceive(Context context, Intent intent ) {
+            Log.d("Apartmentcontrol Service", "Receive intent= " + intent );
+            Intent serviceIntent = new Intent(context,apartmentcontrol.UpdateService.class);
+            if( intent.getAction() != null ) {
+                    serviceIntent.setAction(intent.getAction());
+            }
+            
+            if( intent.getExtras() != null ) {
+                    serviceIntent.putExtras(intent.getExtras());
+            }
+            context.startService(serviceIntent);
+            
+            super.onReceive(context, intent);
+    }
+	
+	public static class UpdateService extends Service {
+		int counter = 0;
 		
+		public UpdateService()
+		{
+			Log.i("Apartmentcontrol Service", "Class created");
+    		
 		}
+		
+        @Override
+        public void onStart(Intent intent, int startId) {
+    		Log.i("Apartmentcontrol Service", "ohh yeah we do get here odd" + counter);
+    		counter++;
+        	Toast.makeText(this, "Service started", Toast.LENGTH_LONG).show();
+        	
+        	RemoteViews updateViews = buildUpdate(this);
+        	
+        	// Push update for this widget to the home screen
+            ComponentName thisWidget = new ComponentName(this, apartmentcontrol.class);
+            AppWidgetManager manager = AppWidgetManager.getInstance(this);
+            manager.updateAppWidget(thisWidget, updateViews);
+            
+            makeAction();
+        }
 
-		super.onReceive(context, intent);
+        public void makeAction() {
+        	
+        	
+        }
+        
+        public RemoteViews buildUpdate(Context context)
+        {
+        	// This really doesn't make much sense to me to have here tho.
+    		Toast.makeText(context, "Resetted", Toast.LENGTH_LONG).show();
+    		RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.main);
+    		Intent configIntent = new Intent(context, ClickOneActivity.class);
+    		configIntent.setAction(ACTION_WIDGET_CONFIGURE);
+    		Intent active = new Intent(context, apartmentcontrol.class);
+    		active.setAction(ACTION_WIDGET_RECEIVER);
+    		active.putExtra("msg", "Btn:");
+    		//active.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID , appWidgetIds[0]);
+    		
+    		if ( counter % 2 == 0 )
+    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
+    		else
+    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
+    		
+			PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, 0);
+    		remoteViews.setOnClickPendingIntent(R.id.ImageView01, actionPendingIntent);
+    		
+    		//appWidgetManager.updateAppWidget(appWidgetIds, remoteViews);
+    		return remoteViews;
+        	
+        }
+        
+		@Override
+		public IBinder onBind(Intent intent) {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 }
