@@ -4,4 +4,5 @@ android:minWidth="146dip"
 android:minHeight="72dip"
 android:updatePeriodMillis="10000"
 android:initialLayout="@layout/main"
+android:configure="se.nedo.apartmentcontrol.ConfigureActivity"
 />
