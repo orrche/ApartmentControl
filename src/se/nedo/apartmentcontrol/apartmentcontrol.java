@@ -1,5 +1,10 @@
 package se.nedo.apartmentcontrol;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import se.nedo.apartmentcontrol.R;
 import android.app.Activity;
 import android.app.Notification;
@@ -18,6 +23,9 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 
 public class apartmentcontrol extends AppWidgetProvider {
 	public static String ACTION_WIDGET_CONFIGURE = "ConfigureWidget";
@@ -53,15 +61,31 @@ public class apartmentcontrol extends AppWidgetProvider {
 	
 	public static class UpdateService extends Service {
 		int counter = 0;
+		String sUserAgent = null;
 		
 		public UpdateService()
 		{
-			Log.i("Apartmentcontrol Service", "Class created");
-    		
+//			Log.i("Apartmentcontrol Service", "Class created");
+//    		
+//			
+			
 		}
 		
         @Override
         public void onStart(Intent intent, int startId) {
+        	if ( sUserAgent == null ) {
+	        	try {
+					PackageManager manager = this.getPackageManager();
+		            PackageInfo info;
+					
+					info = manager.getPackageInfo(this.getPackageName(), 0);
+		            sUserAgent = String.format(this.getString(R.string.template_user_agent),
+		                    info.packageName, info.versionName);
+				} catch (Exception e) {
+					Log.e("Apartmentcontrol Service", e.toString());
+				}
+        	}
+        	
     		Log.i("Apartmentcontrol Service", "ohh yeah we do get here odd" + counter);
     		counter++;
         	Toast.makeText(this, "Service started", Toast.LENGTH_LONG).show();
@@ -77,6 +101,25 @@ public class apartmentcontrol extends AppWidgetProvider {
         }
 
         public void makeAction() {
+        	
+        	if ( counter % 2 == 0 )
+    			getXML("http://jkg.for-logic.com/www/cmd.psp?id=3&cmd=on");
+    		else
+    			getXML("http://jkg.for-logic.com/www/cmd.psp?id=3&cmd=off");    		
+        }
+        
+        public void getXML(String url)
+        {
+            HttpClient client = new DefaultHttpClient();
+            HttpGet request = new HttpGet(url);
+            request.setHeader("User-Agent", sUserAgent);
+
+            try {
+                HttpResponse response = client.execute(request);
+                
+            }
+            catch ( Exception e) {
+            }
         	
         	
         }
