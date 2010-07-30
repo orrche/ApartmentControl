@@ -86,10 +86,16 @@ public class apartmentcontrol extends AppWidgetProvider {
 				}
         	}
         	
-    		Log.i("Apartmentcontrol Service", "ohh yeah we do get here odd" + counter);
-    		counter++;
-        	Toast.makeText(this, "Service started", Toast.LENGTH_LONG).show();
-        	
+    		
+
+            final String action = intent.getAction();
+            Log.i("Apartmentcontrol Service", "Action " + action + " == " + ACTION_WIDGET_RECEIVER);
+    		if ( ACTION_WIDGET_RECEIVER.equals(action) )
+    		{
+    			counter++;
+            	makeAction();
+    		}
+    		
         	RemoteViews updateViews = buildUpdate(this);
         	
         	// Push update for this widget to the home screen
@@ -97,12 +103,11 @@ public class apartmentcontrol extends AppWidgetProvider {
             AppWidgetManager manager = AppWidgetManager.getInstance(this);
             manager.updateAppWidget(thisWidget, updateViews);
             
-            makeAction();
         }
 
         public void makeAction() {
         	
-        	if ( counter % 2 == 0 )
+        	if ( isOn() )
     			getXML("http://jkg.for-logic.com/www/cmd.psp?id=3&cmd=on");
     		else
     			getXML("http://jkg.for-logic.com/www/cmd.psp?id=3&cmd=off");    		
@@ -123,6 +128,10 @@ public class apartmentcontrol extends AppWidgetProvider {
         	
         	
         }
+        public boolean isOn()
+        {
+        	return counter % 2 == 0;
+        }
         
         public RemoteViews buildUpdate(Context context)
         {
@@ -136,10 +145,12 @@ public class apartmentcontrol extends AppWidgetProvider {
     		active.putExtra("msg", "Btn:");
     		//active.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID , appWidgetIds[0]);
     		
-    		if ( counter % 2 == 0 )
-    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
-    		else
+
+    		
+    		if ( isOn() )
     			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
+    		else
+    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
     		
 			PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, 0);
     		remoteViews.setOnClickPendingIntent(R.id.ImageView01, actionPendingIntent);
