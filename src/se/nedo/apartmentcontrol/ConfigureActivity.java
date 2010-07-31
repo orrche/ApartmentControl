@@ -14,6 +14,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore.Images;
 import android.util.Log;
 import android.view.View;
@@ -85,9 +86,10 @@ public class ConfigureActivity extends Activity implements OnClickListener{
          		ContentValues values = new ContentValues();
          		values.put("cmdid", ((EditText) findViewById(R.id.EditText01)).getText().toString());
                 
-                SharedPreferences.Editor editor = getPreferences(0).edit();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit(); 
                 int value = Integer.valueOf(((EditText) findViewById(R.id.EditText01)).getText().toString());
                 editor.putInt("cmdid_"+mAppWidgetId, value);
+                editor.commit();
                 Log.d(TAG, "Configuration for " + mAppWidgetId + " is set to " + value);
                 // Trigger pushing a widget update to surface
 //                UpdateService.requestUpdate(new int[] {

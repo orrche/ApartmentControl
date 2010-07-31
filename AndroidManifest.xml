@@ -13,12 +13,6 @@
 				android:resource="@xml/apartmentcontrol_provider" />
 		</receiver>
 
-
-		<receiver android:name=".ApartmentBroadcastReceiver">
-                <intent-filter>
-                        <action android:name="ActionReceiverWidget" />
-                </intent-filter>
-        </receiver>
         <!-- Service to perform web API queries -->
         <service android:name=".apartmentcontrol$UpdateService" />
         

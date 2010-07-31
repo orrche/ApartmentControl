@@ -144,10 +144,17 @@ public class apartmentcontrol extends AppWidgetProvider {
             if ( id == -1 )
             {
             	Log.e(TAG, "preference for " + mAppWidgetId + " not set");
+            	if ( mAppWidgetId == 13 ) {
+            		Log.d(TAG, "But now we are setting hte preferenc right here should stick then");
+	            	SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit(); 
+	                editor.putInt("cmdid_"+mAppWidgetId, 3);
+	                
+	                editor.commit();
+            	}
             	return;
             }
             
-        	if ( isOn() )
+        	if ( isOn(mAppWidgetId) )
     			getXML("http://jkg.for-logic.com/www/cmd.psp?id="+id+"&cmd=on");
     		else
     			getXML("http://jkg.for-logic.com/www/cmd.psp?id="+id+"&cmd=off");    		
@@ -167,36 +174,37 @@ public class apartmentcontrol extends AppWidgetProvider {
         	
         	
         }
-        public boolean isOn()
+        public boolean isOn(int mAppWidgetId)
         {
         	return counter % 2 == 0;
         }
         
         public RemoteViews buildUpdate(Context context, int mAppWidgetId)
         {
-        	// This really doesn't make much sense to me to have here tho.
         	Log.d(TAG, "The build is for app " + mAppWidgetId);
     		RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.main);
     		
-    		if ( mAppWidgetId % 2 == 0)
+    		// Checking if the app is on or off
+    		if ( isOn(mAppWidgetId) )
     			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
     		else
     			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
     		
+    		// Number beneth the item to identify what ID it has
     		remoteViews.setTextViewText(R.id.TextView01, "" + mAppWidgetId);
+    		
+    		// TODO: The intent that doesn't work
     		Intent active = new Intent(context, apartmentcontrol.class);
     		active.setAction(ACTION_WIDGET_RECEIVER);
+    		active.setType(mAppWidgetId + "");
+    		active.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mAppWidgetId);
     		active.putExtra("msg", "Btn:" + mAppWidgetId);
-    		active.putExtra("ID", mAppWidgetId);
-    		active.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID , mAppWidgetId);
-    		    		
-			PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, 0);
+    		
+			PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, PendingIntent.FLAG_UPDATE_CURRENT);
 			
     		remoteViews.setOnClickPendingIntent(R.id.ImageView01, actionPendingIntent);
     		
-    		//appWidgetManager.updateAppWidget(appWidgetIds, remoteViews);
     		return remoteViews;
-        	
         }
         
 		@Override
