@@ -38,6 +38,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 
 public class ConfigureActivity extends Activity implements OnClickListener{
 	private int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
+	public static String TAG = "Apartmentcontrol Config";
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -53,7 +54,7 @@ public class ConfigureActivity extends Activity implements OnClickListener{
 	       mAppWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mAppWidgetId);
 	       setConfigureResult(Activity.RESULT_CANCELED);
 	       if (mAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-	           finish();
+	    	   finish();
 	           return;
 	       }
 	}
@@ -81,14 +82,13 @@ public class ConfigureActivity extends Activity implements OnClickListener{
 	public void onClick(View v) {
 		 switch (v.getId()) {
          	case R.id.Button01: {
-         		Toast.makeText(this, "Fun", Toast.LENGTH_LONG).show();
-        		
          		ContentValues values = new ContentValues();
          		values.put("cmdid", ((EditText) findViewById(R.id.EditText01)).getText().toString());
                 
                 SharedPreferences.Editor editor = getPreferences(0).edit();
-                editor.putInt("cmdid_"+mAppWidgetId, Integer.valueOf(((EditText) findViewById(R.id.EditText01)).getText().toString()));
-             
+                int value = Integer.valueOf(((EditText) findViewById(R.id.EditText01)).getText().toString());
+                editor.putInt("cmdid_"+mAppWidgetId, value);
+                Log.d(TAG, "Configuration for " + mAppWidgetId + " is set to " + value);
                 // Trigger pushing a widget update to surface
 //                UpdateService.requestUpdate(new int[] {
 //                    mAppWidgetId
