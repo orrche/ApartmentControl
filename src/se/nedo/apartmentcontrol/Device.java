@@ -33,6 +33,11 @@ public class Device {
 		return true;
 	}
 	
+	public void touch(int w_id) {
+		if ( !widgets.contains(w_id)) 
+			widgets.add(w_id);
+	}
+	
 	public String getName() {
 		return name;
 	}
@@ -44,4 +49,9 @@ public class Device {
 	public boolean getState() {
 		return state;
 	}
+	
+	public List<Integer> getWidgets() {
+		return widgets;
+	}
+	
 }

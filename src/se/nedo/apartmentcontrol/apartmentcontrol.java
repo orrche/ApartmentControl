@@ -110,6 +110,7 @@ public class apartmentcontrol extends AppWidgetProvider {
         	
         	if ( sUserAgent == null ) {
 	        	try {
+	        		handleXML(getXML("http://minoris.se/www/cmd.psp"));
 					PackageManager manager = this.getPackageManager();
 		            PackageInfo info;
 					
@@ -177,7 +178,13 @@ public class apartmentcontrol extends AppWidgetProvider {
                     if( update )
                     {
                     	// We need to update the right widget !!
-                    	
+                    	for( int wid : dev.getWidgets()) {
+                        	RemoteViews updateViews = buildUpdate(this,wid);
+                        	
+                        	// Push update for this widget to the home screen
+                            AppWidgetManager manager = AppWidgetManager.getInstance(this);
+                            manager.updateAppWidget(wid, updateViews);
+                    	}
                     }                    
                 }
             }
@@ -252,6 +259,7 @@ public class apartmentcontrol extends AppWidgetProvider {
         	
         	if ( dev != null )
         	{
+        		dev.touch(mAppWidgetId);
 	    		// Checking if the app is on or off
 	    		if ( dev.getState() )
 	    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
@@ -260,16 +268,13 @@ public class apartmentcontrol extends AppWidgetProvider {
 	    		
 	    		// Number beneth the item to identify what ID it has
 	    		remoteViews.setTextViewText(R.id.TextView01, "" + dev.getName());
-	    		
-	    		
-	    		
         	}
         	else
         	{
         		remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
         		remoteViews.setTextViewText(R.id.TextView01, "" + mAppWidgetId);
-	    		
         	}
+        	
         	// TODO: The intent that doesn't work
     		Intent active = new Intent(context, apartmentcontrol.class);
     		active.setAction(ACTION_WIDGET_RECEIVER);
