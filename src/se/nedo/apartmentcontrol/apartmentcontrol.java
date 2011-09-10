@@ -6,30 +6,24 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import se.nedo.apartmentcontrol.R;
-import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore.Images;
 import android.util.Log;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.RemoteViews;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 
-import android.content.SharedPreferences;
+
+import java.util.*;
+
+@SuppressWarnings("unused")
 public class apartmentcontrol extends AppWidgetProvider {
 	public static String ACTION_WIDGET_CONFIGURE = "ConfigureWidget";
 	public static String ACTION_WIDGET_RECEIVER = "ActionReceiverWidget";
@@ -83,6 +77,7 @@ public class apartmentcontrol extends AppWidgetProvider {
 	
 	public static class UpdateService extends Service {
 		int counter = 0;
+		Map<Integer, Boolean> switchState = new HashMap<Integer, Boolean>();
 		String sUserAgent = null;
 		
 		public UpdateService()
@@ -154,10 +149,16 @@ public class apartmentcontrol extends AppWidgetProvider {
             	return;
             }
             
-        	if ( isOn(mAppWidgetId) )
-    			getXML("http://jkg.for-logic.com/www/cmd.psp?id="+id+"&cmd=on");
+        	if ( isOn(id) )
+        	{
+        		switchState.put(id, false);
+    			getXML("http://minoris.se/www/cmd.psp?id="+id+"&cmd=off");
+        	}
     		else
-    			getXML("http://jkg.for-logic.com/www/cmd.psp?id="+id+"&cmd=off");    		
+    		{
+        		switchState.put(id, true);
+    			getXML("http://minoris.se/www/cmd.psp?id="+id+"&cmd=on");
+    		}
         }
         
 		public void getXML(String url)
@@ -174,18 +175,23 @@ public class apartmentcontrol extends AppWidgetProvider {
         	
         	
         }
-        public boolean isOn(int mAppWidgetId)
+        public boolean isOn(int id)
         {
-        	return counter % 2 == 0;
+        	Boolean state = switchState.get(id);
+        	if ( state != null )
+        		return state;
+        	return true;
         }
         
         public RemoteViews buildUpdate(Context context, int mAppWidgetId)
         {
         	Log.d(TAG, "The build is for app " + mAppWidgetId);
     		RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.main);
-    		
+
+        	SharedPreferences pref;
+        	pref = PreferenceManager.getDefaultSharedPreferences(this);
     		// Checking if the app is on or off
-    		if ( isOn(mAppWidgetId) )
+    		if ( isOn(pref.getInt("cmdid_"+mAppWidgetId, -1)) )
     			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
     		else
     			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);

@@ -37,6 +37,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 
+@SuppressWarnings("unused")
 public class ConfigureActivity extends Activity implements OnClickListener{
 	private int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
 	public static String TAG = "Apartmentcontrol Config";

@@ -3,7 +3,7 @@
     <string name="hello">Hello World, apartmentcontrol!</string>
     <string name="app_name">ApartmentControl</string>
     <string name="widget_text">Hello Widget!</string>
-	<string name="template_user_agent">"%s/%s (Linux; Android)"</string>
+	<string name="template_user_agent">whatever</string>
 	
 	<string name="title_configure">Configure</string>
 	
