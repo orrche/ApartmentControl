@@ -4,12 +4,16 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import se.nedo.apartmentcontrol.R;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.sax.Element;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.appwidget.AppWidgetManager;
@@ -21,7 +25,12 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.*;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 @SuppressWarnings("unused")
 public class apartmentcontrol extends AppWidgetProvider {
@@ -76,8 +85,8 @@ public class apartmentcontrol extends AppWidgetProvider {
     }
 	
 	public static class UpdateService extends Service {
-		int counter = 0;
-		Map<Integer, Boolean> switchState = new HashMap<Integer, Boolean>();
+		Map<Integer, Device> switchState = new HashMap<Integer, Device>();
+		
 		String sUserAgent = null;
 		
 		public UpdateService()
@@ -119,7 +128,6 @@ public class apartmentcontrol extends AppWidgetProvider {
     		if ( ACTION_WIDGET_RECEIVER.equals(action) )
     		{
     			Log.i(TAG, "We have id: " + mAppWidgetId);
-    			counter++;
             	makeAction(mAppWidgetId);
     		}
     		
@@ -131,6 +139,49 @@ public class apartmentcontrol extends AppWidgetProvider {
             
         }
 
+        public void handleXML(org.w3c.dom.Element root) {
+        	if ( root == null )
+        		return;
+        	
+        	NodeList items = root.getElementsByTagName("tellstick");
+            for (int i=0;i<items.getLength();i++){
+                Node item = items.item(i);
+                NodeList properties = item.getChildNodes();
+                for (int j=0;j<properties.getLength();j++){
+                	Node property = properties.item(j);
+                    if ( !property.getNodeName().equalsIgnoreCase("device"))
+                    	continue;
+                    int dev_id = Integer.parseInt(property.getAttributes().getNamedItem("id").getNodeValue());
+                    Device dev = switchState.get(dev_id);
+                    if ( dev == null )
+                    {
+                    	dev = new Device(dev_id);
+                    	switchState.put(dev_id, dev);
+                    }
+                    
+                    dev.setName(property.getAttributes().getNamedItem("name").getNodeValue());
+                    dev.setType(property.getAttributes().getNamedItem("type").getNodeValue());
+                    
+                    boolean update = false;
+                    NodeList recivers = property.getChildNodes();
+                    for( int k=0; k < recivers.getLength();k++) {
+                        if ( !recivers.item(k).getNodeName().equalsIgnoreCase("reciver"))
+                        	continue;
+                        if ( recivers.item(k).getAttributes().getNamedItem("state").getNodeValue().equalsIgnoreCase("on") ) {
+                        	update = dev.setState(true);                            	
+                        } else {
+                        	update = dev.setState(false);
+                        }
+                    }
+                    
+                    if( update )
+                    {
+                    	// We need to update the right widget !!
+                    	
+                    }                    
+                }
+            }
+        }
         public void makeAction(int mAppWidgetId) {
         	SharedPreferences pref;
         	pref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -149,38 +200,45 @@ public class apartmentcontrol extends AppWidgetProvider {
             	return;
             }
             
-        	if ( isOn(id) )
-        	{
-        		switchState.put(id, false);
-    			getXML("http://minoris.se/www/cmd.psp?id="+id+"&cmd=off");
-        	}
-    		else
-    		{
-        		switchState.put(id, true);
-    			getXML("http://minoris.se/www/cmd.psp?id="+id+"&cmd=on");
+        	if ( isOn(id) ) {
+    			handleXML(getXML("http://minoris.se/www/cmd.psp?id="+id+"&cmd=off"));
+        	} else {
+    			handleXML(getXML("http://minoris.se/www/cmd.psp?id="+id+"&cmd=on"));
     		}
+        	
         }
         
-		public void getXML(String url)
+		public org.w3c.dom.Element getXML(String url)
         {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			
             HttpClient client = new DefaultHttpClient();
             HttpGet request = new HttpGet(url);
             request.setHeader("User-Agent", sUserAgent);
 
             try {
-                client.execute(request);
+            	
+            	HttpResponse response = client.execute(request);
+            	
+            	org.w3c.dom.Element root = null;
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document dom = builder.parse(response.getEntity().getContent());
+                root = dom.getDocumentElement();
+
+                return root;
             }
             catch ( Exception e) {
+            	
             }
-        	
+        	return null;
         	
         }
         public boolean isOn(int id)
         {
-        	Boolean state = switchState.get(id);
-        	if ( state != null )
-        		return state;
-        	return true;
+        	Device dev = switchState.get(id);
+        	if ( dev == null )
+        		return false;
+        	return dev.getState();
         }
         
         public RemoteViews buildUpdate(Context context, int mAppWidgetId)
@@ -190,26 +248,37 @@ public class apartmentcontrol extends AppWidgetProvider {
 
         	SharedPreferences pref;
         	pref = PreferenceManager.getDefaultSharedPreferences(this);
-    		// Checking if the app is on or off
-    		if ( isOn(pref.getInt("cmdid_"+mAppWidgetId, -1)) )
-    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
-    		else
-    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
-    		
-    		// Number beneth the item to identify what ID it has
-    		remoteViews.setTextViewText(R.id.TextView01, "" + mAppWidgetId);
-    		
-    		// TODO: The intent that doesn't work
+        	Device dev = switchState.get(pref.getInt("cmdid_"+mAppWidgetId, -1));
+        	
+        	if ( dev != null )
+        	{
+	    		// Checking if the app is on or off
+	    		if ( dev.getState() )
+	    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
+	    		else
+	    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
+	    		
+	    		// Number beneth the item to identify what ID it has
+	    		remoteViews.setTextViewText(R.id.TextView01, "" + dev.getName());
+	    		
+	    		
+	    		
+        	}
+        	else
+        	{
+        		remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
+        		remoteViews.setTextViewText(R.id.TextView01, "" + mAppWidgetId);
+	    		
+        	}
+        	// TODO: The intent that doesn't work
     		Intent active = new Intent(context, apartmentcontrol.class);
     		active.setAction(ACTION_WIDGET_RECEIVER);
     		active.setType(mAppWidgetId + "");
     		active.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mAppWidgetId);
     		active.putExtra("msg", "Btn:" + mAppWidgetId);
-    		
 			PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, PendingIntent.FLAG_UPDATE_CURRENT);
-			
-    		remoteViews.setOnClickPendingIntent(R.id.ImageView01, actionPendingIntent);
-    		
+        	remoteViews.setOnClickPendingIntent(R.id.ImageView01, actionPendingIntent);
+        	
     		return remoteViews;
         }
         
