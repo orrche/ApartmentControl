@@ -261,10 +261,17 @@ public class apartmentcontrol extends AppWidgetProvider {
         	{
         		dev.touch(mAppWidgetId);
 	    		// Checking if the app is on or off
-	    		if ( dev.getState() )
-	    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
-	    		else
-	    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
+        		if ( dev.getType().equals("fan")) {
+		    		if ( dev.getState() )
+		    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan);
+		    		else
+		    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.fan_off);
+        		} else {
+		    		if ( dev.getState() )
+		    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.bulb);
+		    		else
+		    			remoteViews.setImageViewResource(R.id.ImageView01, R.drawable.bulb_off);
+        		}
 	    		
 	    		// Number beneth the item to identify what ID it has
 	    		remoteViews.setTextViewText(R.id.TextView01, "" + dev.getName());
